@@ -1,3 +1,10 @@
+# -------------------------------------------------------
+# 講義用(1)
+# Tyrosineから絨毯の年齢を予測する。
+# データはwebから取得する。
+# 1次の線形回帰でフィッティングを行う。
+# -------------------------------------------------------
+
 # 線形回帰：目的変数体説明変数のグラフを書くと先になる。
 # Rではlmコマンドを利用することで線形回帰分析を行うことができる。
 # lm(モデル関数、学習用データ)
@@ -69,9 +76,9 @@ abline(a=0,b=1,col="red")
 # 決定係数は目的変数の測定値と予測値を引数とする下記の関数で計算できる。
 # ※決定係数はモデルの精度
 # 決定係数は目的変数の測定値と予測値を引数とする下記の関数で計算できる。
-# coef.det <- function(measured, predicted){
-#  1-sum((measured-predicted)^2) / sum((measured-mean(measured))^2)
-#  }
+ coef.det <- function(measured, predicted){
+  1-sum((measured-predicted)^2) / sum((measured-mean(measured))^2)
+  }
 
 # モデルの決定係数を上記関数を使って求める
 coef.det(carpet.data$age,carpet.data$age.predicted.lm1)
