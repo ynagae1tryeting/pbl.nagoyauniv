@@ -1,0 +1,276 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(DT) # 表作成用
+library(ggmap) # 住所・緯度経度対応用
+
+#install.packages("devtools")
+#devtools::install_github("rstudio/leaflet")
+library(leaflet)
+
+#df <-read.csv("./files/緯度経度をつけた名古屋市認可型保育園リストutf8.csv", stringsAsFactors = FALSE)
+
+
+# --- 名古屋市の認可保育園のデータベースの有無で分岐
+
+if (file.exists("./files/Nagoya.hoikusho.all.obj")){
+    df <- readRDS("./files/Nagoya.hoikusho.all.obj")
+} else {
+    # 住所から緯度経度を求める
+    # 今回はggmap::geocode()を利用
+    df <-readRDS("./files/hoikusho.Nagoya2.obj")
+    df_ll <- geocode(as.character(df[,3]), source = "google", output = "latlon")
+    df <- dplyr::bind_cols(df,df_ll)
+    df$type <- factor(df$type)
+}
+
+# --- ポップアップ用のテキスト編集
+df_1 <- mutate(df,popup=paste(df$認可施設.事業所等名,
+                              sprintf("所在地, 電話番号"),
+                              df$所在地,df$電話番号,
+                              sep="<br/>"))
+df_koritsu <- dplyr::filter(dplyr::filter(df_1,df_1[,5] == "公立"))
+df_shiritsu <- dplyr::filter(dplyr::filter(df_1,df_1[,5] == "私立"))
+# --- 
+# knitr::kable(df) #(データを表にして表示)
+
+# --- 条件入力
+opa <- 0.8
+
+df <- data.frame(
+    name=df_shiritsu[,1],
+    num=df_shiritsu[,2],
+    system=df_shiritsu[,7],
+    lon=df_shiritsu$lon,
+    lat=df_shiritsu$lat,
+    popup=df_shiritsu$popup)
+
+df$num <- as.numeric(df$num)
+
+shiritsu <- leaflet(df) %>% 
+  addTiles() %>%
+  setView(lng=136.881537,lat=35.170915,zoom=12) %>%
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "保育所"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "保育所"))$num,
+                 sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="保育所",
+             data=dplyr::filter(df,system == "保育所"),
+             color="#ff3366") %>% 
+  
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "小規模保育事業A型"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "小規模保育事業A型"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="小規模保育事業A型",
+             data=dplyr::filter(df,system == "小規模保育事業A型"),
+             color="#ff9900") %>%
+  
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "小規模保育事業B型"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "小規模保育事業B型"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="小規模保育事業B型",
+             data=dplyr::filter(df, system == "小規模保育事業B型"),
+             color="#ffcc33") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "幼保連携型認定こども園"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "幼保連携型認定こども園"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="幼保連携型認定こども園",
+             data=dplyr::filter(df,system == "幼保連携型認定こども園"),
+             color="#3366ff") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "家庭的保育事業"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "家庭的保育事業"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="家庭的保育事業",
+             data=dplyr::filter(df,system == "家庭的保育事業"),
+             color="#ff66cc") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "保育所型認定こども園"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "保育所型認定こども園"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="保育所型認定こども園",
+             data=dplyr::filter(df,system == "保育所型認定こども園"),
+             color="33ccff") %>% 
+
+  addLayersControl(
+             overlayGroups = c(
+                 "保育所",
+                 "小規模保育事業A型",
+                 "小規模保育事業B型",
+                 "幼保連携型認定こども園",
+                 "家庭的保育事業",
+                 "保育所型認定こども園"),
+             options = layersControlOptions(collapsed = FALSE))
+
+# --- 公立の保育園の可視化 
+df <- data.frame(
+    name=df_koritsu[,1],
+    num=df_koritsu[,2],
+    system=df_koritsu[,7],
+    lon=df_koritsu$lon,
+    lat=df_koritsu$lat,
+    popup=df_koritsu$popup)
+
+df$num <- as.numeric(df$num)
+
+koritsu <- leaflet(df) %>% 
+  addTiles() %>%
+  setView(lng=136.881537,lat=35.170915,zoom=12) %>%
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "保育所"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "保育所"))$num,
+                 sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="保育所",
+             data=dplyr::filter(df,system == "保育所"),
+             color="#ff3366") %>% 
+  
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "小規模保育事業A型"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "小規模保育事業A型"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="小規模保育事業A型",
+             data=dplyr::filter(df,system == "小規模保育事業A型"),
+             color="#ff9900") %>%
+  
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "小規模保育事業B型"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "小規模保育事業B型"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="小規模保育事業B型",
+             data=dplyr::filter(df,system == "小規模保育事業B型"),
+             color="#ffcc33") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "幼保連携型認定こども園"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "幼保連携型認定こども園"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="幼保連携型認定こども園",
+             data=dplyr::filter(df,system == "幼保連携型認定こども園"),
+             color="#3366ff") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "家庭的保育事業"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "家庭的保育事業"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="家庭的保育事業",
+             data=dplyr::filter(df,system == "家庭的保育事業"),
+             color="#ff66cc") %>% 
+
+  addCircleMarkers(
+             lng=~lon,
+             lat=~lat,
+             fillOpacity=opa,
+             label=paste(
+                 (dplyr::filter(df,system == "保育所型認定こども園"))$name,
+                 "：定員人数=",
+                 (dplyr::filter(df,system == "保育所型認定こども園"))$num,sep=""
+                 ),
+             radius=~num / 5,
+             popup=~popup,
+             group="保育所型認定こども園",
+             data=dplyr::filter(df,system == "保育所型認定こども園"),
+             color="#33ccff") %>% 
+             
+  addLayersControl(
+             overlayGroups = c(
+                 "保育所",
+                 "小規模保育事業A型",
+                 "小規模保育事業B型",
+                 "幼保連携型認定こども園",
+                 "家庭的保育事業",
+                 "保育所型認定こども園"),
+             options = layersControlOptions(collapsed = FALSE))
+```
+####私立保育園の地図上の可視化
+```{r, echo=FALSE, fig.width=10, fig.height=10, warning=FALSE, message=FALSE}
+shiritsu
+```
+
+####公立保育園の地図上の可視化
+```{r, echo=FALSE, fig.width=10, fig.height=10, warning=FALSE, message=FALSE}
+koritsu
+```
