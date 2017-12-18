@@ -7,7 +7,7 @@
 library(twitteR)
 
 # twitterアプリケーションの管理画面から取得(これは長江が)
-source("./config.R")
+source("../../config_pbl5.R")
 source("./functions.R")   # 自分で設定した関数
 
 # httr_oauth_chcheを取得
