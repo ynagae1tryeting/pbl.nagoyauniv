@@ -44,6 +44,6 @@ library("cluster")   # クラスタリング用ライブラリ
 library("factoextra")   # クラスタを可視化するやつ
 
 for(user in usernames){
-    analyzeSentiment(user, 5, 50)
+    analyzeSentiment(user, 3, 50)
 }
 
