@@ -2,7 +2,7 @@
 # (c) yuki nagae @ tryeting
 # MIT
 # --------------------------
-# 3週間分のデータを使って、次の5日間の需要を予測してみよう
+# 次の2時間後の価格を予測してみよう
 
 
 # データ取得... 日本語ファイルのため、いきなり読めない。
@@ -11,11 +11,16 @@ system(paste("curl http://www.jepx.org/market/excel/spot_2018.csv > ", tmpfile, 
 system(paste("nkf -w --overwrite ", tmpfile, sep=""))  # nkfによる文字エンコーディングの変換
 d <- read.csv(tmpfile)  # UTF8によるデータ読み込み
 
-# 方針(1)〜5日前のデータを使用して(エリアプライス関西)を予測してみよう！
-OBJ <- d[,12]
 
-y <- embed(OBJ, 5)[,5]
-X <- embed(OBJ, 5)[,1]
+# //////////////////////
+# 説明変数の作成
+# 方針(1)〜2時間前のデータを使用して(エリアプライス関西)を予測してみよう！
+# 30分ごとにデータが蓄積
+# 2時間... 4行分ずらせばいい
+OBJ <- d[,12]
+N <- 3
+y <- embed(OBJ, N)[,1]
+X <- embed(OBJ, N)[,ncol(embed(OBJ, N))]
 D <- data.frame("y"=y, "X"=X)
 
 # 入力データを吐き出すための一時ファイル作り
@@ -34,3 +39,5 @@ system(paste(
 # 結果を受け取り、Rからカレントディレクトリにcsvとして焼き直し
 R2 <- read.csv("./R2SCORE.csv")
 message(paste("R2SCORE : ", R2, sep=""))
+
+# Rscript --vanilla --slave 

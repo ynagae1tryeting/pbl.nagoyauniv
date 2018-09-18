@@ -1,0 +1,14 @@
+pref27={code:"27",name:"大阪府"};
+areaA2701={code:"A2701",name:"大阪市北部"};
+
+prefCodeA  <-- 27
+
+areaCodeA  <-- A2701
+
+curl -d prefCodeA=27 -d areaCodeA=A2701 http://www.contract.reins.or.jp/search/ja/dynamic/control01-02.js
+
+curl -d first_name=ふが -d last_name=ほげ男 http://api.examples/post.php
+
+
+
+http://www.contract.reins.or.jp/search/ja/dynamic/control01-02.js

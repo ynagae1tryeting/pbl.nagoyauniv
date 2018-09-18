@@ -1,0 +1,1 @@
+curl -s https://info.finance.yahoo.co.jp/history/?code=998407.O | pup 'table json{}' | jq .
